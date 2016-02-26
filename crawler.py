@@ -1,71 +1,179 @@
-#Extract all MK phone numbers & emails from a given domain, to depth 3
-#Change URL in def main to choose domain
-#Change depth in def main to choose depth
-
-import sys
+import textUrlRegex
+import cpickleUrlReader
 import urllib2
 import re
+import time
+import anydbm
+import cPickle
 
-websiteURLs = [] #Global variable. Contains all URLs found using findUrlsFromDomain(url).
+#Global variable. Contains all .mk domains
+websiteURLs = [] 
+#Global variable. Contains all URLs found using findUrlsFromDomain(url).
+foundURLs = []
+#Global variable. Contains all visited urls
+visitedURLs = []
+#Global variable. Contains url and mk text
+downloadedURLs = {}
 
-def findUrlsFromDomain(url): #find links on this page from url's domain
+def openWebsite(url):
+    global visitedURLs
+    
+    website = urllib2.urlopen(url)
+    website_html = website.read()
+    website.close()
+    
+    return website_html
+
+#find links in url from .mk domain
+def findUrlsFromDomain(url): 
     try:
         global websiteURLs
-        website = urllib2.urlopen(url)
-        website_html = website.read()
+        global foundURLs       
+        
+        website_html = openWebsite(url)
+                
+        mk_text = textUrlRegex.readText(website_html)  
+        
+        if url not in visitedURLs: 
+            downloadedURLs[url] = mk_text       
+            visitedURLs.append(url)
+        else: return
+        
+        if len(visitedURLs) % 10 == 0: print 'visited urls:', len(visitedURLs)
+                
         domainSplit = url.split('/')
-        urlDomainName = domainSplit[0]+'/'+domainSplit[1]+'/'+domainSplit[2]#contains only the domain of url
+        #contains only the domain of url
+        urlDomainName = domainSplit[0]+ '/' + domainSplit[1]+ '/' + domainSplit[2]
 
         #find all (<a href="*") strings in website_html
-        urlMatchesText = re.findall(r'\<a ?.* ?href=[\"\'][^\"\']*[\"\']',website_html)
+        urlMatchesText = re.findall(r'\<a ?.* ?href=[\"\'][^\"\']*[\"\']', website_html)
 
         #contains all website urls from urlDomainName
         websiteLinks=[]
 
         #finds all website urls from urlDomainName
         for urlMatchText in urlMatchesText:
-            urlMatches = re.findall(r'href=[\"\'][^\"\']*[\"\']',urlMatchText)#find all hrefs
+            #find all hrefs
+            urlMatches = re.findall(r'href=[\"\'][^\"\']*[\"\']', urlMatchText)
             for urlMatch in urlMatches:
-                link=urlMatch[6:-1]#get only contents of href
-                checkFileType = re.search(r'(?:.webm$|.mp4$|.doc$|.pdf$|.jpg$|.png$|.gif$|.image$|.pdf$|.jpeg$|.jfif$|.mpg$|.mpeg$|.ps$|.tar$|.txt$|.wav$|.zip$|.css$|.js$)',link)
-                if not checkFileType: #don't open a link if it leads to a file with the above extensions
-                    checkDomain = re.search(r'(?:http://|https://|http://www.|https://www.|//www.|//)',link)
-                    if (checkDomain): #if link contains http, https or //, check if different domain
-                        if not link in websiteURLs: #add link only if its not in global variable websiteURLs
-                            websiteLinks.append(link)
-                            websiteURLs.append(link)
-                        else: #it must be from the same domain
-                            checkPath=re.search(r'^\/',link) #check if root path
-                            checkAnchor=re.search(r'^#',link) #if link has # at the start, it's an anchor link from the same page
-                            if not checkAnchor and checkPath:
-                                if not urlDomainName+link in websiteURLs: #add link only if its not in global variable websiteURLs
-                                    websiteLinks.append(urlDomainName+link)
-                                    websiteURLs.append(urlDomainName+link)
-
-        website.close()
+                #get only contents of href
+                link = urlMatch[6:-1]
+                checkFileType = re.search(r'(?:.webm$|.mp4$|.doc$|.pdf$|.jpg$|.png$|.gif$|.image$|.pdf$|.jpeg$|.jfif$|.mpg$|.mpeg$|.ps$|.tar$|.txt$|.wav$|.zip$|.css$|.js$)', link)
+                #don't open a link if it leads to a file with the above extensions                
+                if not checkFileType: 
+                    checkDomain = re.search(r'(?:http://|https://)', link)
+                    #if link contains http, https or //, check if different domain                    
+                    if (checkDomain): 
+                        checkDomainName = re.search(r'\.mk', link) 
+                        #if link contains .mk this link is from the same domain
+                        if checkDomainName: 
+                            addNewWebsite(link)
+                            if link not in foundURLs: foundURLs.append(link)
+                            if re.search(urlDomainName, link): websiteLinks.append(link)
+                    #it must be from the same domain                    
+                    else: 
+                        #check if root path
+                        checkPath=re.search(r'^\/', link) 
+                        #if link has # at the start, it's an anchor link from the same page
+                        checkAnchor=re.search(r'^#', link) 
+                        if not checkAnchor and checkPath:
+                            if not urlDomainName + link in foundURLs: 
+                                websiteLinks.append(urlDomainName + link)
+                                foundURLs.append(urlDomainName + link)
 
         return websiteLinks
 
     except:
         pass
 
+#if new, add this url to websiteURLs
+def addNewWebsite(link):
+    global websiteURLs
+    
+    link = link.split('/')
+    url = link[0] + '/' + link[1] + '/' + link[2]
+    
+    if url not in websiteURLs:
+        websiteURLs.append(url)
+    
+    return True
+    
 
-def visitSite(n, url): #recursively find all emails and phones from links in url's domain up to depth n
+#recursive visit of sites in url's domain up to depth n
+def visitSite(n, url): 
     if n==0:
         return
     else:
         urls = findUrlsFromDomain(url)
-        for url1 in urls:
-            visitSite(n-1,url1)
+        if urls:
+            for url1 in urls:
+                visitSite(n-1, url1)
         return
 
-def main():
-    url='http://time.mk'
-    depth=1 #depth of recursive search
+#write url and mk text to disk using cpickle and anydbm
+def urlWriter():    
+    f = anydbm.open('cpickle_mk_text.anydbm', 'c')    
+    for url in downloadedURLs:
+        text = downloadedURLs[url]
+        f[url] = cPickle.dumps(text, 2)
+    f.close()
 
-    visitSite(depth,url) #search mails and phone numbers in url
-    for url in websiteURLs:
-        print url
+#write url and mk text to txt file
+def urlReader():
+    f = anydbm.open('cpickle_mk_text.anydbm', 'r')
+    f1 = open('rez.txt', 'w')
+    
+    for k in f.keys():
+        f1.write(k + ' ' + cPickle.loads(f[k]) + '\n\n')
+    
+    f.close()
+    f1.close()
+
+def main():
+    global downloadedURLs
+    #url='http://www.time.mk/'
+    depth = 3 #depth of recursive search
+    
+    start = time.time()
+       
+    i = 0
+    for line in open('domen.txt'):
+        visitSite(depth, line) #search mails and phone numbers in url
+        i += 1
+        
+        if i % 1 == 0: print 'domains visited', i  
+        if len(downloadedURLs) > 100:             
+            urlWriter()
+            downloadedURLs.clear()
+        if i == 4: 
+            urlWriter()            
+            break
+        
+    
+    end = time.time()    
+    
+    f = open('foundDomains.txt','w')
+    if len(websiteURLs) > 0:
+        for url in websiteURLs: f.write(url + '\n')
+    f.close()
+    
+    f = open('foundURLs.txt','w')
+    if len(foundURLs) > 0:
+        for url in foundURLs: f.write(url + '\n')
+    f.close()
+    
+    f = open('visistedURLs.txt','w')
+    if len(visitedURLs) > 0:
+        for url in visitedURLs: f.write(url + '\n')
+    f.close()
+    
+    #human readable mk text written in rez.txt
+    urlReader()
+            
+    print 'Domains:', len(websiteURLs)
+    print 'Found:  ', len(foundURLs)
+    print 'Visited:', len(visitedURLs)
+    print 'Time:   ', (end - start)
 
 if __name__ == '__main__':
     main()
