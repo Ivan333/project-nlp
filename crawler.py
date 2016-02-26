@@ -30,11 +30,12 @@ def findUrlsFromDomain(url):
         global websiteURLs
         global foundURLs       
         
-        website_html = openWebsite(url)
-                
-        mk_text = textUrlRegex.readText(website_html)  
-        
+        #if already visited, do not open
         if url not in visitedURLs: 
+            website_html = openWebsite(url)
+                
+            mk_text = textUrlRegex.readText(website_html)  
+            
             downloadedURLs[url] = mk_text       
             visitedURLs.append(url)
         else: return
@@ -141,10 +142,12 @@ def main():
         visitSite(depth, line) #search mails and phone numbers in url
         i += 1
         
-        if i % 1 == 0: print 'domains visited', i  
+        if i % 1 == 0: print 'domains visited', i
+        #every 100 downloaded sites, write to disk and clear ram
         if len(downloadedURLs) > 100:             
             urlWriter()
             downloadedURLs.clear()
+        #stopping criteria
         if i == 4: 
             urlWriter()            
             break
