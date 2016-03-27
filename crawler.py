@@ -12,6 +12,8 @@ websiteURLs = []
 foundURLs = []
 #Global variable. Contains all visited urls
 visitedURLs = []
+#already visited domains, do not visit again
+alreadyVisited = []
 #Global variable. Contains url and mk text
 downloadedURLs = {}
 
@@ -31,14 +33,14 @@ def findUrlsFromDomain(url):
         global foundURLs       
         
         #if already visited, do not open
-        if url not in visitedURLs: 
-            website_html = openWebsite(url)
-                
-            mk_text = textUrlRegex.readText(website_html)  
-            
-            downloadedURLs[url] = mk_text       
-            visitedURLs.append(url)
-        else: return
+        if url in visitedURLs or url in alreadyVisited: return
+        if not url.startswith('http'): return
+        
+        website_html = openWebsite(url)
+        #save website html                
+        mk_text = textUrlRegex.readText(website_html)  
+        downloadedURLs[url] = mk_text       
+        visitedURLs.append(url)
         
         if len(visitedURLs) % 10 == 0: print 'visited urls:', len(visitedURLs)
                 
@@ -113,11 +115,36 @@ def visitSite(n, url):
 
 #write url and mk text to disk using cpickle and anydbm
 def urlWriter():    
+    global websiteURLs
+    global foundURLs
+    global visitedURLs    
+    
     f = anydbm.open('cpickle_mk_text.anydbm', 'c')    
     for url in downloadedURLs:
         text = downloadedURLs[url]
         f[url] = cPickle.dumps(text, 2)
     f.close()
+    downloadedURLs.clear()
+    
+    f = open('foundDomains.txt','a')
+    if len(websiteURLs) > 0:
+        for url in websiteURLs: f.write(url + '\n')
+    f.close()
+    del websiteURLs[:]
+    
+    f = open('foundURLs.txt','w')
+    if len(foundURLs) > 0:
+        for url in foundURLs: f.write(url + '\n')
+    f.close()    
+    del foundURLs[:]    
+    
+    f = open('visitedURLs.txt','a')
+    if len(visitedURLs) > 0:
+        for url in visitedURLs: 
+            f.write(url + '\n')
+            if url not in alreadyVisited: alreadyVisited.append(url)
+    f.close()
+    del visitedURLs[:]
 
 #write url and mk text to txt file
 def urlReader():
@@ -125,58 +152,50 @@ def urlReader():
     f1 = open('rez.txt', 'w')
     
     for k in f.keys():
-        f1.write(k + ' ' + cPickle.loads(f[k]) + '\n\n')
+        f1.write(k.split('\n')[0] + '\t' + cPickle.loads(f[k]).replace('\n', '').replace('\r', '') + '\n')
     
     f.close()
     f1.close()
 
 def main():
     global downloadedURLs
+    global visitedURLs
     #url='http://www.time.mk/'
     depth = 3 #depth of recursive search
     
     start = time.time()
-       
+    
+    for url in open('visitedURLs.txt'):
+        alreadyVisited.append(url)
+           
     i = 0
-    for line in open('domen.txt'):
-        visitSite(depth, line) #search mails and phone numbers in url
+    for line in open('foundDomains.txt'):
         i += 1
+        if i < 200021: continue
+            
+        visitSite(depth, line) #search mails and phone numbers in url
         
         if i % 1 == 0: print 'domains visited', i
         #every 100 downloaded sites, write to disk and clear ram
-        if len(downloadedURLs) > 100:             
+        if len(downloadedURLs) > 100:
             urlWriter()
-            downloadedURLs.clear()
         #stopping criteria
-        if i == 4: 
+        if i == 210000: 
             urlWriter()            
             break
         
-    
+    urlWriter() 
     end = time.time()    
     
-    f = open('foundDomains.txt','w')
-    if len(websiteURLs) > 0:
-        for url in websiteURLs: f.write(url + '\n')
-    f.close()
-    
-    f = open('foundURLs.txt','w')
-    if len(foundURLs) > 0:
-        for url in foundURLs: f.write(url + '\n')
-    f.close()
-    
-    f = open('visistedURLs.txt','w')
-    if len(visitedURLs) > 0:
-        for url in visitedURLs: f.write(url + '\n')
-    f.close()
     
     #human readable mk text written in rez.txt
     urlReader()
             
-    print 'Domains:', len(websiteURLs)
-    print 'Found:  ', len(foundURLs)
-    print 'Visited:', len(visitedURLs)
-    print 'Time:   ', (end - start)
+    #print 'Domains:', len(websiteURLs)
+    #print 'Found:  ', len(foundURLs)
+    #print 'Visited:', len(visitedURLs)
+    print 'Time:   ', (end - start) / 60, 'm'
 
 if __name__ == '__main__':
     main()
+    
