@@ -1,33 +1,36 @@
 # -*- coding: utf-8 -*-
 
 import re
+from mkText import MkTextChecker
 
+#initialise global variables
 text = {}
-a = 'this is text number one and contains a sentence.'
-b = 'this is text number one and contains a few words.'
-c = 'this is text number'
+fourgram = {}
+
+checkerMk = MkTextChecker("wfl-mk.tbl")
 
 i = 0
+
+#read texts from file
 for line in open("rez.txt"):
     i+=1
     split = line.split('\t')
-    print line.split('\t')[0]
-    text[split[0]] = split[1]
+    if(checkerMk.checkMkText(split[1])):
+        text[split[0]] = split[1]
+        print split[0]
+    if i == 200:
+        break;
 
-
-
-
-
-
-
-fourgram = {}
-
+#create fourgrams
 for i in text.keys():
     fourgram[i] = set()
-    words = re.findall('\w+', text[i])
+    words = text[i].split()
     for n in range(len(words) - 3):
         fourgram[i].add( ' '.join( words[n : n + 4] ) )
 
+
+
+#duplicate detection
 keys = fourgram.keys()
 f1 = open('rezNoDuplicates.txt', 'w')
 

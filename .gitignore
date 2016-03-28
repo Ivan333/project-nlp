@@ -48,3 +48,6 @@ Temporary Items
 
 /cpickle.anydmb
 /test.db
+*.txt
+*.tbl
+*.pyc
