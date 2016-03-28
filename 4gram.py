@@ -50,13 +50,5 @@ while len(keys) > 0:
             keys.remove(j)
             fourgram.pop(j)
 
+
 f1.close()
-
-
-
-
-#for j in fourgram.keys():
-#    if 0 == j: continue
-#    intersect = fourgram[0] & fourgram[j]
-#    print "intesect len ", len(intersect), "calculatioan", len(fourgram[0]) / 2.0
-#    if len(intersect) >= len(fourgram[0]) / 2.0: print 0, j, intersect
