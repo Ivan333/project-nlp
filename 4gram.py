@@ -18,8 +18,7 @@ for line in open("rez.txt"):
     if(checkerMk.checkMkText(split[1])):
         text[split[0]] = split[1]
         print split[0]
-    if i == 200:
-        break;
+
 
 #create fourgrams
 for i in text.keys():
