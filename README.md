@@ -212,4 +212,88 @@ def main():
 if __name__ == '__main__':
     main()
 ```
-#mkText.py 
+
+result form crawler can be seen here: https://drive.google.com/file/d/0B6l1fZCJ7OnGVTBFX0tMV2U5Z2c/view?pref=2&pli=1 
+
+
+mkText.py contains MkTextChecker with methods to check macedonian words from dictionary
+
+```python
+
+class MkTextChecker:
+
+    #constructor with dictionaryName
+    def __init__(self, dictionaryName):
+        self.t = open(dictionaryName, 'r').read()
+
+    # check text returns T if contains 50% or more macedonian words F otherwise
+    def checkMkText(self,text):
+        countT = 0
+        countF = 0
+        words = text.split()
+        wordsLen = len(words)
+        for word in words:
+            if(self.checkMkWord(word)):
+                countT+=1
+            else:
+                countF+=1
+            if(countT >= wordsLen/2.0):
+                return True
+            elif(countF >= wordsLen/2.0):
+                return False
+        return False
+    #if word is macedonian returns T, F otherwise
+    def checkMkWord(self,word):
+        if(self.t.find(word) != -1):
+            return True
+        return False
+```
+
+
+4gram.py is where MkTextChecker is called and where we do duplicate detection
+
+```python
+
+# -*- coding: utf-8 -*-
+
+import re
+import pickle
+
+class MkTextChecker:
+
+    #constructor with dictionaryName
+    def __init__(self, dictionaryName):
+        self.t = open(dictionaryName, 'r').read()
+
+    # check text returns T if contains 50% or more macedonian words F otherwise
+    def checkMkText(self,text):
+        countT = 0
+        countF = 0
+        words = text.split()
+        wordsLen = len(words)
+        for word in words:
+            if(self.checkMkWord(word)):
+                countT+=1
+            else:
+                countF+=1
+            if(countT >= wordsLen/2.0):
+                return True
+            elif(countF >= wordsLen/2.0):
+                return False
+        return False
+    #if word is macedonian returns T, F otherwise
+    def checkMkWord(self,word):
+        if(self.t.find(word) != -1):
+            return True
+        return False
+
+
+```
+
+
+results can be seen here(note contains non mk text): https://onedrive.live.com/redir?resid=EE2C8D8A48D02330!1784&authkey=!AFfxuc4yA31kZLk&ithint=file%2ctxt
+
+due to time constraints results with mk text only can be seen here: https://onedrive.live.com/redir?resid=EE2C8D8A48D02330!1785&authkey=!AO1Axna9IWce2vo&ithint=file%2ctxt
+
+
+
