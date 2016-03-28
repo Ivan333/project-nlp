@@ -16,7 +16,7 @@ MK	corpus
 #Documentation
 
 Main aplication logic is in crawler.py here we have the crawling logic:
-
+```
 #Global variable. Contains all .mk domains
 websiteURLs = []
 #Global variable. Contains all URLs found using findUrlsFromDomain(url).
@@ -211,4 +211,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+```
 
