@@ -256,37 +256,55 @@ class MkTextChecker:
 
 # -*- coding: utf-8 -*-
 
-import re
-import pickle
 
-class MkTextChecker:
+#initialise global variables
+text = {}
+fourgram = {}
 
-    #constructor with dictionaryName
-    def __init__(self, dictionaryName):
-        self.t = open(dictionaryName, 'r').read()
+checkerMk = MkTextChecker("wfl-mk.tbl")
 
-    # check text returns T if contains 50% or more macedonian words F otherwise
-    def checkMkText(self,text):
-        countT = 0
-        countF = 0
-        words = text.split()
-        wordsLen = len(words)
-        for word in words:
-            if(self.checkMkWord(word)):
-                countT+=1
-            else:
-                countF+=1
-            if(countT >= wordsLen/2.0):
-                return True
-            elif(countF >= wordsLen/2.0):
-                return False
-        return False
-    #if word is macedonian returns T, F otherwise
-    def checkMkWord(self,word):
-        if(self.t.find(word) != -1):
-            return True
-        return False
+i = 0
 
+#read texts from file
+for line in open("rez.txt"):
+    i+=1
+    split = line.split('\t')
+    if(checkerMk.checkMkText(split[1])):
+        text[split[0]] = split[1]
+        print split[0]
+    if i == 200:
+        break;
+
+#create fourgrams
+for i in text.keys():
+    fourgram[i] = set()
+    words = text[i].split()
+    for n in range(len(words) - 3):
+        fourgram[i].add( ' '.join( words[n : n + 4] ) )
+
+
+
+#duplicate detection
+keys = fourgram.keys()
+f1 = open('rezNoDuplicates.txt', 'w')
+
+while len(keys) > 0:
+    key = keys.pop()
+    keysJ = list(keys)
+    f1.write(key + '\t' + text[key])
+
+    while len(keysJ) > 0:
+        j = keysJ.pop()
+        intersect = fourgram[key] & fourgram[j]
+        #print "checking", text[j]
+        #print "forgram ", fourgram[key], "fourgram", fourgram[j]
+        #print "calculation", len(intersect) , len(fourgram[key]) / 2.0
+        if len(intersect) >= len(fourgram[key])/2.0 and len(intersect) >= len(fourgram[j])/2.0:
+            text.pop(j)
+            keys.remove(j)
+            fourgram.pop(j)
+
+f1.close()
 
 ```
 
