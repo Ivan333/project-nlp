@@ -30,3 +30,5 @@ class MkTextChecker:
         if(self.t.find(word) != -1):
             return True
         return False
+
+    
