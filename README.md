@@ -15,7 +15,7 @@ MK	corpus
 
 #Documentation
 
-Main aplication logic is in crawler.py here we have the crawling logic(note current version limits to 20k web pages:
+Main aplication logic is in crawler.py here we have the crawling logic:
 ```python
 #Global variable. Contains all .mk domains
 websiteURLs = []
