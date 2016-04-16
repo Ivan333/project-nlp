@@ -17,12 +17,22 @@ discovered_domains = []
 
 def openWebsite(url):
     global visitedURLs
+    website_html = ""
 
-    website = urllib2.urlopen(url, timeout=5)
-    website_html = website.read()
-    
-    website.close()
-    
+    request = urllib2.Request(url)
+    response = urllib2.urlopen(request)
+    if response.info().getheader('Content-Type').split(";")[0] == "text/html":
+
+        try:
+
+            website = urllib2.urlopen(url, timeout=5)
+            website_html = website.read()
+            print "dsadsa"
+
+            website.close()
+        except Exception as e:
+            print e
+
     return website_html
 
 #find links in url from .mk domain
@@ -31,35 +41,38 @@ def findUrlsFromDomain(url):
         global visited_domains
         global discovered_domains
         global visitedURLs
-        
+
         links = []
 
         domainSplit = url.split('/')
+
         #contains only the domain of url
         domain = "/".join(domainSplit[:3])
         if domain not in visited_domains: visited_domains[domain] = {}
         if url in visited_domains[domain]: return
-            
+
         visitedURLs.append(url)
         if len(visitedURLs) % 10 == 0: print 'visited urls:', len(visitedURLs)
-        
-        website_html = openWebsite(url)        
+
+        website_html = openWebsite(url)
+
         visited_domains[domain][url] = website_html
-        
+
         soup = BeautifulSoup(website_html)
+
         for link in soup.findAll('a'):
             link = link.get('href')
             if "mailto:" in link: continue
-            if not link.startswith('http'): link = domain + link               
+            if not link.startswith('http'): link = domain + link
             link_domain = "/".join(link.split("/")[:3])
-            
-            if not link_domain.endswith(".mk"): continue     
-            if not link_domain == domain and link_domain not in discovered_domains: 
+
+            if not link_domain.endswith(".mk"): continue
+            if not link_domain == domain and link_domain not in discovered_domains:
                 discovered_domains.append(link_domain)
-            
+
             if link_domain == domain:
                 links.append(link)
-        
+
         print url, len(links)
         return links
 
@@ -81,12 +94,14 @@ def addNewWebsite(link):
 
 #recursive visit of sites in url's domain up to depth n
 def visitSite(n, url):
+    print "url " , url, "dlabocina ", n, "broj na simnati urla", len(visitedURLs)
+
     if n==0:
         return
     else:
         if not url.startswith('http'): return
         if url in visited_domains: return
-        
+
         urls = findUrlsFromDomain(url)
         if urls:
             for url1 in urls:
@@ -119,14 +134,14 @@ def main():
     global discovered_domains
     url='http://sitel.com.mk/'
     depth = 4 #depth of recursive search
-    
+
     #db = anydbm.open("mk_html.anydbm",)
-    #visited_domains = cPickle.loads(db["0"])  
+    #visited_domains = cPickle.loads(db["0"])
     #db.close()
-    
+
     #for domain in open("discovered_domains.txt"):
         #discovered_domains.append(domain)
-    
+
     start = time.time()
 
     i = 0
@@ -153,6 +168,6 @@ def main():
     #print 'Visited:', len(visitedURLs)
     print 'Time:   ', (end - start) / 60, 'm'
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     #main()
-    findUrlsFromDomain("http://sitel.com.mk/tv-programa?qt-tv_programa=1#qt-tv_programa")
+    #findUrlsFromDomain("http://sitel.com.mk/sites/default/files/tv_programa/video-teaser/2016/april/zvezdicki_ponedelnik.mp4")
