@@ -36,7 +36,7 @@ def findUrlsFromDomain(url):
         if url in visitedURLs or url in alreadyVisited: return
         if not url.startswith('http'): return
 
-        website_html = openWebsite(url)
+        website_html = openWebsite(url, timeout=5)
         #save website html
         mk_text = textUrlRegex.readText(website_html)
         downloadedURLs[url] = mk_text
