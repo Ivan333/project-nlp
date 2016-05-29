@@ -52,3 +52,5 @@ Temporary Items
 *.tbl
 *.pyc
 *.anydbm
+*.db
+*.db-journal
