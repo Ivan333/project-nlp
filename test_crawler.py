@@ -15,6 +15,7 @@ visited_domains = {}
 #discovered domains, visit later
 discovered_domains = []
 
+
 def openWebsite(url):
     global visitedURLs
     website_html = ""
@@ -30,6 +31,7 @@ def openWebsite(url):
         print "openWebsite %s error: %s" % (url, e) 
 
     return website_html
+
 
 #find links in url from .mk domain
 def findUrlsFromDomain(url):
@@ -73,19 +75,6 @@ def findUrlsFromDomain(url):
     return links
 
 
-#if new, add this url to websiteURLs
-def addNewWebsite(link):
-    global websiteURLs
-
-    link = link.split('/')
-    url = link[0] + '/' + link[1] + '/' + link[2]
-
-    if url not in websiteURLs:
-        websiteURLs.append(url)
-
-    return True
-
-
 #recursive visit of sites in url's domain up to depth n
 def visitSite(n, url):
     if n==0:
@@ -98,6 +87,7 @@ def visitSite(n, url):
             for url1 in urls:
                 visitSite(n-1, url1)
         return
+
 
 #write url and mk text to disk using cpickle and anydbm
 def urlWriter(url):
@@ -114,20 +104,21 @@ def urlWriter(url):
     #for domain in discovered_domains: f.write(domain.strip() + '\n')
     #f.close()
 
+
 #write url and mk text to txt file
 def urlReader():
     f1 = open('rez.txt', 'w')
 
     for domain in visited_domains:
         for url in visited_domains[domain]:
-            f1.write( url +"\n" + visited_domains[domain][url] +"\n\n" )
+            f1.write( url + "\n" + visited_domains[domain][url] + "\n\n" )
 
     f1.close()
+
 
 def main():
     global visited_domains
     #global discovered_domains
-    #url='http://motojove.com.mk'
     depth = 4 #depth of recursive search
     
     db = anydbm.open("mk_html_new.anydbm")
@@ -143,13 +134,13 @@ def main():
     i = 0
     for url in open('found_domains_new.txt'):
         i += 1
-        if i < 9971: continue
+        url = url.strip()
 
-        if url.strip() in visited_domains: continue
-        visitSite(depth, url.strip()) 
-        urlWriter(url.strip())
+        if url in visited_domains: continue
+        visitSite(depth, url)
+        urlWriter(url)
 
-        visited_domains[url.strip()] = 1
+        visited_domains[url] = 1
     
         if i % 1 == 0: print 'domains visited', i
         #stopping criteria

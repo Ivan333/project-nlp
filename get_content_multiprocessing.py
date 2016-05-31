@@ -54,7 +54,6 @@ def site_content(domain, domain_name, url):
 
 
 def pool_process(data):
-    domain = data
     num_urls = 0
     content = {}
     for domain_name in data:
@@ -74,11 +73,10 @@ def pool_initializer():
 
 
 def pool_test(content):
-    inputs = content
     pool_size = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=pool_size, initializer=pool_initializer)
 
-    pool_outputs = pool.map(pool_process, inputs)
+    pool_outputs = pool.map(pool_process, content)
     pool.close()
     pool.join()
 

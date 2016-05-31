@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 from test_read_anydbm import *
 from mkText import MkTextChecker
 import multiprocessing
+import re
+from simhash import Simhash, SimhashIndex
 
 checkerMk = MkTextChecker("wfl-mk.tbl")
 
@@ -183,6 +185,49 @@ def write_txt():
     db.close()
 
 
+def get_features(s):
+    width = 3
+    s = s.lower()
+    s = re.sub(r'[^\w]+', '', s)
+    return [s[i:i + width] for i in range(max(len(s) - width + 1, 1))]
+
+
+def get_phrases(s):
+    width = 3
+    s = s.lower()
+    s = s.split()
+    start = 0
+    end = start + width
+    phrases = []
+    while end <= len(s):
+        for w in s[start:end]:
+            phrases.append(w)
+        start += 1
+        end += 1
+    return phrases
+
+
+def simhash_test():
+    data = {
+        1: u'How are you? I Am fine. blar blar blar blar blar Thanks.',
+        2: u'How are you i am fine. blar blar blar blar blar than',
+        3: u'This is simhash test.',
+    }
+    for k, v in data.items(): print k, get_phrases(v)
+    for k, v in data.items(): print k, Simhash(get_phrases(v)).value
+
+    objs = [(str(k), Simhash(get_phrases(v))) for k, v in data.items()]
+    index = SimhashIndex(objs, k=3)
+
+    print index.bucket_size()
+
+    s1 = Simhash(get_phrases(u'How are you i am fine. blar blar blar blar blar thank'))
+    print index.get_near_dups(s1)
+
+    index.add('4', s1)
+    print index.get_near_dups(s1)
+
+
 def main():
     start = time.time()
     #site_content('http://www.akademik.mk', 'http://www.akademik.mk/nekoi-sporni-prashana-vo-zakonot-za-zashtita-na-ukazhuvachite-intervju-so-sudijata-bojana-velkovska/')
@@ -190,7 +235,8 @@ def main():
     #count_sites()
     #multiprocessing_test()
     #pool_test()
-    write_txt()
+    #write_txt()
+    simhash_test()
     print time.time()-start, "s"
     #print domains["http://www.akademik.mk"].keys()
 
